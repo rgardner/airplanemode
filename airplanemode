@@ -12,6 +12,7 @@ RELEVANT_APPS = ['Caffeine', 'Dropbox', 'Google Drive']
 class State(object):
     @property
     def bluetooth(self):
+        """Is bluetooth on? Lazy instantiates to the current status."""
         if not hasattr(self, '_bluetooth'):
             output = subprocess.check_output('blueutil status', shell=True)
             self._bluetooth = 'on' in str(output)
@@ -23,10 +24,11 @@ class State(object):
 
     @property
     def wifi(self):
+        """Is wifi on? Lazy instantiates to the current status."""
         if not hasattr(self, '_wifi'):
             cmd = 'networksetup -getairportpower en0'
             output = subprocess.check_output(cmd, shell=True)
-            self._wifi = 'on' in str(output)
+            self._wifi = 'On' in str(output)
         return self._wifi
 
     @wifi.setter
@@ -35,6 +37,7 @@ class State(object):
 
     @property
     def apps(self):
+        """Which of the relevant apps are active? Lazy instantiate."""
         if not hasattr(self, '_apps'):
             self._apps = [app for app in RELEVANT_APPS if is_running(app)]
         return self._apps
@@ -45,21 +48,33 @@ class State(object):
 
     def write(self):
         config = configparser.ConfigParser()
-        config.set('PREVSTATE', 'bluetooth', self.bluetooth)
-        config.set('PREVSTATE', 'wifi', self.wifi)
-        config.set('PREVSTATE', 'apps', ','.join(self.apps))
-        with open('~/.airplanemode.ini') as cfgfile:
-            config.write(cfgfile)
+        config['PREVSTATE'] = {
+            'bluetooth': str(self.bluetooth),
+            'wifi': str(self.wifi),
+            'apps': ','.join(self.apps)
+        }
+        home = os.path.expanduser('~')
+        with open(os.path.join(home, '.airplanemode.ini'), 'w+') as configfile:
+            config.write(configfile)
 
     @staticmethod
     def from_save():
         config = configparser.ConfigParser()
-        config.read('~/.airplanemode.ini')
+        home = os.path.expanduser('~')
+        config.read(os.path.join(home, '.airplanemode.ini'))
         state = State()
-        state.bluetooth = config['bluetooth']
-        state.wifi = config['wifi']
-        state.apps = config['apps']
+        state.bluetooth = bool(config['PREVSTATE']['bluetooth'])
+        state.wifi = bool(config['PREVSTATE']['wifi'])
+        apps = config['PREVSTATE']['apps']
+        if apps:
+            state.apps = apps.split(',')
+
         return state
+
+
+def airplane_mode_enabled():
+    home = os.path.expanduser('~')
+    return os.path.exists(os.path.join(home, '.airplanemode.ini'))
 
 
 def is_running(program):
@@ -67,7 +82,8 @@ def is_running(program):
 
 
 def main():
-    if os.environ['AIRPLANE_MODE_ENABLED']:
+    # import pdb; pdb.set_trace()
+    if airplane_mode_enabled():
         # re-enable previously disabled state
         prev_state = State.from_save()
         if prev_state.bluetooth:
@@ -76,7 +92,8 @@ def main():
             subprocess.call(['networksetup', '-setairportpower', 'en0', 'on'])
         for app in prev_state.apps:
             subprocess.call(['open', '-a', app])
-        del os.environ['AIRPLANE_MODE_ENABLED']
+        home = os.path.expanduser('~')
+        os.remove(os.path.join(home, '.airplanemode.ini'))
 
     else:
         # disable default apps
@@ -85,10 +102,9 @@ def main():
         if curr_state.bluetooth:
             subprocess.call(['blueutil', 'off'])
         if curr_state.wifi:
-            subprocess.call(['networksetup', '-setairportpower', 'en' 'off'])
+            subprocess.call(['networksetup', '-setairportpower', 'en0', 'off'])
         for app in curr_state.apps:
             subprocess.call(['pkill', app])
-        os.environ['AIRPLANE_MODE_ENABLED'] = 1
 
 
 if __name__ == '__main__':
