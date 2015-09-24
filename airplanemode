@@ -1,0 +1,95 @@
+#!/usr/bin/env python3
+"""Power off network and kill Internet-only daemons."""
+
+import configparser
+import os
+import subprocess
+
+# The programs to terminate
+RELEVANT_APPS = ['Caffeine', 'Dropbox', 'Google Drive']
+
+
+class State(object):
+    @property
+    def bluetooth(self):
+        if not hasattr(self, '_bluetooth'):
+            output = subprocess.check_output('blueutil status', shell=True)
+            self._bluetooth = 'on' in str(output)
+        return self._bluetooth
+
+    @bluetooth.setter
+    def bluetooth(self, status):
+        self._bluetooth = status
+
+    @property
+    def wifi(self):
+        if not hasattr(self, '_wifi'):
+            cmd = 'networksetup -getairportpower en0'
+            output = subprocess.check_output(cmd, shell=True)
+            self._wifi = 'on' in str(output)
+        return self._wifi
+
+    @wifi.setter
+    def wifi(self, status):
+        self._wifi = status
+
+    @property
+    def apps(self):
+        if not hasattr(self, '_apps'):
+            self._apps = [app for app in RELEVANT_APPS if is_running(app)]
+        return self._apps
+
+    @apps.setter
+    def apps(self, active_apps):
+        self._apps = active_apps
+
+    def write(self):
+        config = configparser.ConfigParser()
+        config.set('PREVSTATE', 'bluetooth', self.bluetooth)
+        config.set('PREVSTATE', 'wifi', self.wifi)
+        config.set('PREVSTATE', 'apps', ','.join(self.apps))
+        with open('~/.airplanemode.ini') as cfgfile:
+            config.write(cfgfile)
+
+    @staticmethod
+    def from_save():
+        config = configparser.ConfigParser()
+        config.read('~/.airplanemode.ini')
+        state = State()
+        state.bluetooth = config['bluetooth']
+        state.wifi = config['wifi']
+        state.apps = config['apps']
+        return state
+
+
+def is_running(program):
+    return subprocess.call(['pgrep', program]) == 0
+
+
+def main():
+    if os.environ['AIRPLANE_MODE_ENABLED']:
+        # re-enable previously disabled state
+        prev_state = State.from_save()
+        if prev_state.bluetooth:
+            subprocess.call(['blueutil', 'on'])
+        if prev_state.wifi:
+            subprocess.call(['networksetup', '-setairportpower', 'en0', 'on'])
+        for app in prev_state.apps:
+            subprocess.call(['open', '-a', app])
+        del os.environ['AIRPLANE_MODE_ENABLED']
+
+    else:
+        # disable default apps
+        curr_state = State()
+        curr_state.write()
+        if curr_state.bluetooth:
+            subprocess.call(['blueutil', 'off'])
+        if curr_state.wifi:
+            subprocess.call(['networksetup', '-setairportpower', 'en' 'off'])
+        for app in curr_state.apps:
+            subprocess.call(['pkill', app])
+        os.environ['AIRPLANE_MODE_ENABLED'] = 1
+
+
+if __name__ == '__main__':
+    main()
