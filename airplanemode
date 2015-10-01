@@ -4,12 +4,19 @@
 import configparser
 import os
 import subprocess
+from subprocess import DEVNULL
 
 # The programs to terminate
 RELEVANT_APPS = ['Caffeine', 'Dropbox', 'Google Drive']
+AIRPLANE_CONFIG_PATH = os.path.join(os.path.expanduser('~'), '.airplanemode.ini')
 
 
 class State(object):
+    def __repr__(self):
+        return 'bluetooth: {}, wifi: {}, apps: {}'.format(self.bluetooth,
+                                                          self.wifi,
+                                                          self.apps)
+
     @property
     def bluetooth(self):
         """Is bluetooth on? Lazy instantiates to the current status."""
@@ -53,32 +60,38 @@ class State(object):
             'wifi': str(self.wifi),
             'apps': ','.join(self.apps)
         }
-        home = os.path.expanduser('~')
-        with open(os.path.join(home, '.airplanemode.ini'), 'w+') as configfile:
+        with open(AIRPLANE_CONFIG_PATH, 'w+') as configfile:
             config.write(configfile)
 
     @staticmethod
     def from_save():
-        config = configparser.ConfigParser()
-        home = os.path.expanduser('~')
-        config.read(os.path.join(home, '.airplanemode.ini'))
+        config = init_config_parser()
         state = State()
         state.bluetooth = config.getboolean('PREVSTATE', 'bluetooth')
         state.wifi = config.getboolean('PREVSTATE', 'wifi')
-        apps = config['PREVSTATE']['apps']
-        if apps:
-            state.apps = apps.split(',')
-
+        state.apps = config.getlist('PREVSTATE', 'apps')
         return state
 
 
+def init_config_parser() -> configparser.ConfigParser:
+    conv = {}
+    conv['list'] = lambda v: [e.strip() for e in v.split(',') if e.strip()]
+    config = configparser.ConfigParser(converters=conv)
+    config.read(AIRPLANE_CONFIG_PATH)
+    return config
+
+
 def airplane_mode_enabled():
-    home = os.path.expanduser('~')
-    return os.path.exists(os.path.join(home, '.airplanemode.ini'))
+    return os.path.exists(AIRPLANE_CONFIG_PATH)
 
 
 def is_running(program):
-    return subprocess.call(['pgrep', program]) == 0
+    return run_quiet(['pgrep', program]).returncode == 0
+
+
+def run_quiet(argv):
+    """Ignore output of program."""
+    return subprocess.run(argv, stdout=DEVNULL, stderr=DEVNULL)
 
 
 def main():
@@ -91,8 +104,7 @@ def main():
             subprocess.call(['networksetup', '-setairportpower', 'en0', 'on'])
         for app in prev_state.apps:
             subprocess.call(['open', '-a', app])
-        home = os.path.expanduser('~')
-        os.remove(os.path.join(home, '.airplanemode.ini'))
+        os.remove(AIRPLANE_CONFIG_PATH)
 
     else:
         # disable default apps
@@ -103,7 +115,7 @@ def main():
         if curr_state.wifi:
             subprocess.call(['networksetup', '-setairportpower', 'en0', 'off'])
         for app in curr_state.apps:
-            subprocess.call(['pkill', app])
+            run_quiet(['pkill', app])
 
 
 if __name__ == '__main__':
