@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Power off network and kill Internet-only daemons."""
+"""Toggle network connectivity and Internet-only daemons."""
 
 import configparser
 import os
@@ -81,11 +81,11 @@ def init_config_parser() -> configparser.ConfigParser:
     return config
 
 
-def airplane_mode_enabled():
+def airplane_mode_enabled() -> bool:
     return os.path.exists(AIRPLANE_CONFIG_PATH)
 
 
-def is_running(program):
+def is_running(program) -> bool:
     return run_quiet(['pgrep', program]).returncode == 0
 
 
