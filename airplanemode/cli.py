@@ -94,7 +94,7 @@ def run_quiet(argv):
     return subprocess.run(argv, stdout=DEVNULL, stderr=DEVNULL)
 
 
-def main():
+def toggle():
     if airplane_mode_enabled():
         # re-enable previously disabled state
         prev_state = State.from_save()
@@ -118,5 +118,17 @@ def main():
             run_quiet(['pkill', app])
 
 
-if __name__ == '__main__':
-    main()
+def main():
+    import sys
+
+    if len(sys.argv) == 1:
+        toggle()
+        sys.exit(0)
+
+    if sys.argv[1] == 'status':
+        enabled = 'Enabled' if airplane_mode_enabled() else 'Disabled'
+        print("Airplane Mode: {}".format(enabled))
+
+    else:
+        print('usage: airplane <status>')
+        sys.exit(1)
