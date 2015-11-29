@@ -10,6 +10,8 @@ from subprocess import DEVNULL
 RELEVANT_APPS = ['Caffeine', 'Dropbox', 'Google Drive']
 AIRPLANE_CONFIG_PATH = os.path.join(os.path.expanduser('~'), '.airplanemode.ini')
 
+__version__ = '0.2.0'
+
 
 class State(object):
     def __repr__(self):
@@ -128,6 +130,9 @@ def main():
     if sys.argv[1] == 'status':
         enabled = 'Enabled' if airplane_mode_enabled() else 'Disabled'
         print("Airplane Mode: {}".format(enabled))
+
+    elif sys.argv[1] == '-v' or sys.argv[1] == '--version':
+        print('airplanemode version {}'.format(__version__))
 
     else:
         print('usage: airplane <status>')
