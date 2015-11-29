@@ -10,7 +10,7 @@ from subprocess import DEVNULL
 RELEVANT_APPS = ['Caffeine', 'Dropbox', 'Google Drive']
 AIRPLANE_CONFIG_PATH = os.path.join(os.path.expanduser('~'), '.airplanemode.ini')
 
-__version__ = '0.2.0'
+__version__ = '0.2.1'
 
 
 class State(object):
@@ -23,7 +23,7 @@ class State(object):
     def bluetooth(self):
         """Is bluetooth on? Lazy instantiates to the current status."""
         if not hasattr(self, '_bluetooth'):
-            output = subprocess.check_output('blueutil status', shell=True)
+            output = subprocess.check_output(['blueutil', 'status'])
             self._bluetooth = 'on' in str(output)
         return self._bluetooth
 
@@ -35,8 +35,8 @@ class State(object):
     def wifi(self):
         """Is wifi on? Lazy instantiates to the current status."""
         if not hasattr(self, '_wifi'):
-            cmd = 'networksetup -getairportpower en0'
-            output = subprocess.check_output(cmd, shell=True)
+            cmd = ['networksetup', '-getairportpower', 'en0']
+            output = subprocess.check_output(cmd)
             self._wifi = 'On' in str(output)
         return self._wifi
 
