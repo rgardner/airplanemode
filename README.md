@@ -1,10 +1,14 @@
 # Airplane Mode
-Self-contained Python3 program to enable/disable networking and background
-applications.
+Enable/disable wifi, bluetooth, and background applications.
 
-**NOTE:** requires Python 3.5 (type annotations, configparser extensions)
+**NOTE:**
+- requires Python 3.5 (type annotations, configparser extensions)
+- only supports Mac OS X
 
 ## Installation
-```
-pip3 install .
+This requires the `blueutil` program to manage the system's bluetooth.
+
+```bash
+$ brew install blueutil
+$ pip3 install .
 ```
