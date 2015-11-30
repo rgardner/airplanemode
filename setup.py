@@ -18,7 +18,7 @@ readme = open(here('README.md')).read()
 
 setup(
     name='airplanemode',
-    version='0.2.1',
+    version='0.2.2',
     description='Quickly enable/disable networking and background apps',
     long_description=readme,
     author='Robert Gardner',

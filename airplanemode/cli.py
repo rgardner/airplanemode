@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Toggle network connectivity and Internet-only daemons."""
 
 import configparser
@@ -10,7 +9,7 @@ from subprocess import DEVNULL
 RELEVANT_APPS = ['Caffeine', 'Dropbox', 'Google Drive']
 AIRPLANE_CONFIG_PATH = os.path.join(os.path.expanduser('~'), '.airplanemode.ini')
 
-__version__ = '0.2.1'
+__version__ = '0.2.2'
 
 
 class State(object):
@@ -135,5 +134,5 @@ def main():
         print('airplanemode version {}'.format(__version__))
 
     else:
-        print('usage: airplane <status>')
+        print('usage: airplanemode [-v | --version] <status>')
         sys.exit(1)
