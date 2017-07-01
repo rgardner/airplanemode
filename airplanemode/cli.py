@@ -134,5 +134,4 @@ def main():
         print('airplanemode version {}'.format(__version__))
 
     else:
-        print('usage: airplanemode [-v | --version] <status>')
-        sys.exit(1)
+        sys.exit('usage: airplanemode [-v | --version] <status>')
