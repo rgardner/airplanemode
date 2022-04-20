@@ -34,6 +34,8 @@ options:
 
 # Contributing
 
+This project uses the [Scripts to Rule Them All pattern](https://github.blog/2015-06-30-scripts-to-rule-them-all/).
+
 ```sh
 # Create Python virtual environment
 python -m venv .venv
@@ -43,6 +45,8 @@ python -m venv .venv
 python script/setup.py
 # Build the package for distribution
 python script/build.py
+# Run the program
+python script/run.py
 # Format all files
 python script/fmt.py
 # Run tests (including formatters and linters)
