@@ -2,15 +2,19 @@
 
 import argparse
 import configparser
-import os
 import pathlib
 import subprocess
+
+import platformdirs
 
 from .version import __version__
 
 # The programs to terminate
 RELEVANT_APPS = ["Creative Cloud", "Dropbox", "Google Drive", "OneDrive"]
 AIRPLANE_CONFIG_PATH = pathlib.Path.home() / ".airplanemode.ini"
+APP_NAME = "airplanemode"
+APP_AUTHOR = "Starflower"
+APP_DATA_FILENAME = "state.ini"
 
 
 class State:
@@ -67,7 +71,9 @@ class State:
             "wifi": str(self.wifi),
             "apps": ",".join(self.apps),
         }
-        with open(AIRPLANE_CONFIG_PATH, "w+", encoding="utf-8") as configfile:
+        data_file = app_data_file_path()
+        data_file.parent.mkdir(parents=True, exist_ok=True)
+        with open(data_file, "w+", encoding="utf-8") as configfile:
             config.write(configfile)
 
     @staticmethod
@@ -87,13 +93,19 @@ def init_config_parser() -> configparser.ConfigParser:
     conv = {}
     conv["list"] = lambda v: [e.strip() for e in v.split(",") if e.strip()]
     config = configparser.ConfigParser(converters=conv)
-    config.read(AIRPLANE_CONFIG_PATH)
+    config.read(app_data_file_path())
     return config
 
 
 def airplane_mode_enabled() -> bool:
     """Returns True if the airplane mode config file exists, False otherwise."""
-    return os.path.exists(AIRPLANE_CONFIG_PATH)
+    return app_data_file_path().exists()
+
+
+def app_data_file_path() -> pathlib.Path:
+    """Returns path to the app data file (app state)."""
+    data_dir = platformdirs.user_data_dir(APP_NAME, APP_AUTHOR)
+    return pathlib.Path(data_dir, APP_DATA_FILENAME)
 
 
 def is_running(program: str) -> bool:
@@ -125,7 +137,7 @@ def toggle():
             subprocess.call(["networksetup", "-setairportpower", "en0", "on"])
         for app in prev_state.apps:
             subprocess.call(["open", "-a", app])
-        os.remove(AIRPLANE_CONFIG_PATH)
+        app_data_file_path().unlink()
 
     else:
         # disable default apps
