@@ -9,7 +9,7 @@ import subprocess
 from .version import __version__
 
 # The programs to terminate
-RELEVANT_APPS = ["Amphetamine", "Creative Cloud", "Dropbox", "Google Drive", "OneDrive"]
+RELEVANT_APPS = ["Creative Cloud", "Dropbox", "Google Drive", "OneDrive"]
 AIRPLANE_CONFIG_PATH = pathlib.Path.home() / ".airplanemode.ini"
 
 
